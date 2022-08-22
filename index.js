@@ -103,7 +103,7 @@ app.get('/signup', async(req, res) => {
 })
 
 
-// ***************** LOGIN******************************
+// ***************** LOGIN**********************************************
 
 
 app.get('/login',(req,res)=>{
@@ -131,7 +131,7 @@ app.get('/login',(req,res)=>{
 
 app.get('/adduser', async (req, res) => {
     try {
-        const user = await doc(db, "users", req.query.id);
+        const user = doc(db, "users", req.query.id);
         setDoc(user, {
             name: req.query.name,
             mobile: req.query.id,
@@ -198,8 +198,7 @@ app.get('/user', async (req, res) => {
     });
     if (flag2 != 1) {
         setDoc(user, {
-            name: req.query.name,
-            mobile: req.query.id,
+            contact_detail: req.query.id,
             stock: [{
                 s_name: req.query.stockname,
                 qty: parseInt(req.query.qty),
@@ -225,6 +224,7 @@ app.get('/getstatus', async (req, res) => {
         // console.log("Before for loop")
         const promises = stocksarr.map(async (stockarr) => {
             let value = await callfordata(stockarr.s_name);
+            console.log(value)
             let subs = parseInt(value['data']['Global Quote']['05. price']);
             difference = (parseInt(stockarr.invested) - subs * 79 * parseInt(stockarr.qty))
             let obj = {"name":stockarr.s_name,"diff":difference};
@@ -239,6 +239,7 @@ app.get('/getstatus', async (req, res) => {
     }
 }
 catch(err){
+    console.log("Error occured: "+err);
 res.send("Error occured:"+err);
 }
 })
