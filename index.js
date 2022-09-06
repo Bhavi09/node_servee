@@ -6,7 +6,7 @@ import { db } from './config.js';
 import Axios from 'axios';
 import { initializeApp } from "firebase-admin/app";
 import pkg from 'firebase-admin';
-import { getAuth, signInWithEmailAndPassword, signInWithEmailLink, signOut } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword} from "firebase/auth";
 import { createRequire } from "module";
 
 
@@ -40,7 +40,25 @@ app.use(express.urlencoded({ extended: true }));
 
 
 let pfo;
-// **********API'S***********************************************
+
+
+// ******************* MIDDLEWARE**********************************
+
+const reqfilter = (req, res, next) => {
+    const auths = getAuth();
+    auth().verifyIdToken(req.headers["authorization"]).then((decodedtoken) => {
+        if (auths.currentUser.uid != decodedtoken.uid) {
+            console.log("user is not verified");
+            res.send("User is not verified");
+
+        }
+        else {
+            console.log("User is verified");
+            next();
+        }
+    });
+}
+// ************************API'S*************************************
 
 
 app.get('/', (_req, res) => {
@@ -68,8 +86,7 @@ app.get('/signup', async (req, res) => {
     check = await checkUserInFirebase(email);
     if (!check) {
 
-        auth().createUser
-            (
+        auth().createUser(
                 {
                     email: email,
                     password: password,
@@ -96,61 +113,21 @@ app.get('/login', (req, res) => {
         .then((userCredential) => {
             // Signed in 
             const user = userCredential.user;
-            // console.log(user["accessToken"]);
+            console.log(user["accessToken"]);
             actoken = user["accessToken"];
-            res.send({ message: "User logged in",accessToken:user["accessToken"] });
+            res.send({ message: "User logged in", accessToken: user["accessToken"] });
         })
         .catch((_error) => {
             res.send({ message: "User does not exist" });
         });
-})
-
-// ***************** SIGNOUT **********************************************
-
-
-// ***************ADD USER ON FIRESTORE************************************
-
-
-app.get('/checking', async (req, res) => {
-    const auths = getAuth();
-    auth().verifyIdToken(req.query.actoken).then((decodedtoken)=>{
-        if(auths.currentUser.uid==decodedtoken.uid)
-        {
-            console.log("user is verified");
-            res.send("User is verified");
-
-        }
-        else
-        {
-            console.log("Error")
-            res.send("Error");
-}
-    })
-    // try {
-    //     const user = doc(db, "users", req.query.id);
-    //     setDoc(user, {
-    //         name: req.query.name,
-    //         mobile: req.query.id,
-    //         stock: [{
-    //             s_name: req.query.stockname,
-    //             qty: req.query.qty,
-    //             invested: req.query.invested
-    //         }],
-
-    //     }, { merge: true });
-    //     res.end();
-    // } catch (e) {
-    //     console.error("Error adding document: ", e);
-    // }
-
-})
+});
 
 
 // *********** ADDING USER BUYING IN FIRESTORE*************************************
 
 
 
-app.post('/user', async (req, res) => {
+app.post('/user',reqfilter, async (req, res) => {
     try {
         const user = doc(db, "users", req.body.id);
         let number;
@@ -186,7 +163,6 @@ app.post('/user', async (req, res) => {
                         invested: req.body.invested
                     })
                 }
-                console.log(arr);
                 updateDoc(user, {
                     "stock": arr
                 }, { merge: true });
@@ -206,10 +182,10 @@ app.post('/user', async (req, res) => {
     } catch (error) { res.send(err); }
 });
 
-// ********************** GET STATUS *************************
+// ********************** GET STATUS *********************************
 
 
-app.get('/getstatus', async (req, res) => {
+app.get('/getstatus',reqfilter, async (req, res) => {
     let difference = 0;
     let total = 0;
     let inddif = [];
@@ -254,8 +230,10 @@ async function callfordata(name) {
 }
 
 
-// ************** SELL STOCK***************************************
-app.post('/sell', async (req, res) => {
+// ************** SELL STOCK**********************************************
+
+
+app.post('/sell',reqfilter, async (req, res) => {
     let flag1 = 0;
     const docref = doc(db, "users", req.body.id);
     const docSnap = await getDoc(docref);
@@ -271,7 +249,7 @@ app.post('/sell', async (req, res) => {
             pl = ((79 * parseInt(value['data']['Global Quote']['05. price'])) - (parseInt(temp["invested"]) / parseInt(temp["qty"])));
             let stock;
             if ((temp["qty"] - req.body.qty) != 0) {
-                 stock = {
+                stock = {
                     invested: temp["invested"] - subs,
                     qty: temp["qty"] - req.body.qty,
                     s_name: temp['s_name']
