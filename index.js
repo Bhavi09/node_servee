@@ -198,12 +198,15 @@ app.get('/getstatus',reqfilter, async (req, res) => {
             const promises = stocksarr.map(async (stockarr) => {
                 let value = await callfordata(stockarr.s_name);
                 let subs = parseInt(value['data']['Global Quote']['05. price']);
+                console.log(subs);
                 difference = (subs * 79 * parseInt(stockarr.qty) - parseInt(stockarr.invested))
-                let obj = { "name": stockarr.s_name, "diff": difference };
+                let obj = { "name": stockarr.s_name, "diff": difference, "qty":stockarr.qty };
                 inddif.push(obj);
                 total += difference;
             })
             await Promise.all(promises);
+            console.log(total.toString());
+            console.log(stocksarr);
             res.status(200).send({ "P&L": total.toString(), "stocksdetail": stocksarr, "inddif": inddif });
         }
         else {
