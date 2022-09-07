@@ -14,6 +14,10 @@ import puppeteer from 'puppeteer';
     browser.close();
     return price;
 }
+const add = (a,b)=>{
+  return a+b;
+}
+export {add as add};
 export {scrape_price as scrape_price};
 
 

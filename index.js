@@ -79,10 +79,10 @@ async function checkUserInFirebase(email) {
     });
 }
 
-app.get('/signup', async (req, res) => {
+app.post('/signup', async (req, res) => {
     let check = false;
-    let email = req.query.email;
-    let password = req.query.password;
+    let email = req.body.email;
+    let password = req.body.password;
     check = await checkUserInFirebase(email);
     if (!check) {
 
@@ -107,9 +107,9 @@ app.get('/signup', async (req, res) => {
 // ***************** LOGIN**********************************************
 
 
-app.get('/login', (req, res) => {
+app.post('/login', (req, res) => {
     const auths = getAuth();
-    signInWithEmailAndPassword(auths, req.query.email, req.query.password)
+    signInWithEmailAndPassword(auths, req.body.email, req.body.password)
         .then((userCredential) => {
             // Signed in 
             const user = userCredential.user;
@@ -118,7 +118,7 @@ app.get('/login', (req, res) => {
             res.send({ message: "User logged in", accessToken: user["accessToken"] });
         })
         .catch((_error) => {
-            res.send({ message: "User does not exist" });
+            res.status(201).send({ message: "User does not exist" });    
         });
 });
 
@@ -309,9 +309,24 @@ scrape_price("https://www.tickertape.in/stocks/state-bank-of-india-SBI?checklist
 })
 
 
+// ************************ JUST FOR TESTING PURPOSE ********************
+
+
+app.get('/testing',(req,res)=>{
+res.status(200).json({
+    user:{
+        name:"Bhavi Mehta",
+        email:"bhavimdell16@gmail.com"
+    }
+});
+});
+
+
 
 app.listen(3000, (err) => {
     if (!err) {
         console.log("Server started at port 3000");
     }
 }); 
+
+export {app as app};
